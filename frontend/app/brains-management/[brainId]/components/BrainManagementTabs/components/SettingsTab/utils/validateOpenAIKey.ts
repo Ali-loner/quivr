@@ -6,7 +6,7 @@ import { getAxiosErrorParams } from "@/lib/helpers/getAxiosErrorParams";
 export const getOpenAIKeyValidationStatusCode = async (
   key: string
 ): Promise<number> => {
-  const url = "https://api.openai.com/v1/chat/completions";
+  const url = "https://api.zeroai.link/v1/chat/completions";
   const headers = {
     Authorization: `Bearer ${key}`,
     "Content-Type": "application/json",
