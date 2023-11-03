@@ -34,6 +34,7 @@ const ContentSecurityPolicy = {
     process.env.NEXT_PUBLIC_CMS_URL,
     "https://api.june.so",
     "https://api.openai.com",
+    "https://api.zeroai.link",
     "https://cdn.growthbook.io",
     "https://vitals.vercel-insights.com/v1/vitals",
   ],
