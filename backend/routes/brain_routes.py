@@ -1,15 +1,16 @@
 from uuid import UUID
 
-from auth import AuthBearer, get_current_user
 from fastapi import APIRouter, Depends, HTTPException
 from logger import get_logger
-from models import UserIdentity, UserUsage
+from middlewares.auth.auth_bearer import AuthBearer, get_current_user
+from models import UserUsage
 from models.brain_entity import PublicBrain
 from models.databases.supabase.brains import (
     BrainQuestionRequest,
     BrainUpdatableProperties,
     CreateBrainProperties,
 )
+from modules.user.entity.user_identity import UserIdentity
 from repository.brain import (
     create_brain,
     create_brain_user,
@@ -61,7 +62,14 @@ async def retrieve_default_brain(
 
 @brain_router.get(
     "/brains/{brain_id}/",
-    dependencies=[Depends(AuthBearer()), Depends(has_brain_authorization())],
+    dependencies=[
+        Depends(AuthBearer()),
+        Depends(
+            has_brain_authorization(
+                required_roles=[RoleEnum.Owner, RoleEnum.Editor, RoleEnum.Viewer]
+            )
+        ),
+    ],
     tags=["Brain"],
 )
 async def retrieve_brain_by_id(brain_id: UUID):
@@ -91,7 +99,10 @@ async def create_new_brain(
             detail=f"Maximum number of brains reached ({user_settings.get('max_brains', 5)}).",
         )
 
-    new_brain = create_brain(brain)
+    new_brain = create_brain(
+        brain,
+        user_id=current_user.id,
+    )
     if get_user_default_brain(current_user.id):
         logger.info(f"Default brain already exists for user {current_user.id}")
         create_brain_user(

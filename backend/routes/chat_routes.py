@@ -2,21 +2,14 @@ from typing import List, Optional
 from uuid import UUID
 from venv import logger
 
-from auth import AuthBearer, get_current_user
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from llm.qa_base import QABaseBrainPicking
 from llm.qa_headless import HeadlessQA
-from models import (
-    Brain,
-    BrainEntity,
-    Chat,
-    ChatQuestion,
-    UserIdentity,
-    UserUsage,
-    get_supabase_db,
-)
+from middlewares.auth import AuthBearer, get_current_user
+from models import Brain, BrainEntity, Chat, ChatQuestion, UserUsage, get_supabase_db
 from models.databases.supabase.chats import QuestionAndAnswer
+from modules.user.entity.user_identity import UserIdentity
 from repository.chat import (
     ChatUpdatableProperties,
     CreateChatProperties,
@@ -172,7 +165,6 @@ async def create_question_handler(
     try:
         check_user_requests_limit(current_user)
         is_model_ok = (brain_details or chat_question).model in userSettings.get("models", ["gpt-3.5-turbo"])  # type: ignore
-        gpt_answer_generator: HeadlessQA | QABaseBrainPicking
         gpt_answer_generator = chat_instance.get_answer_generator(
             chat_id=str(chat_id),
             model=chat_question.model if is_model_ok else "gpt-3.5-turbo",  # type: ignore
@@ -182,6 +174,7 @@ async def create_question_handler(
             user_openai_api_key=current_user.openai_api_key,  # pyright: ignore reportPrivateUsage=none
             streaming=False,
             prompt_id=chat_question.prompt_id,
+            user_id=current_user.id,
         )
 
         chat_answer = gpt_answer_generator.generate_answer(chat_id, chat_question)
@@ -258,6 +251,7 @@ async def create_stream_question_handler(
             streaming=True,
             prompt_id=chat_question.prompt_id,
             brain_id=str(brain_id),
+            user_id=current_user.id,
         )
 
         return StreamingResponse(

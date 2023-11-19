@@ -3,9 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import HTTPException
-from models.databases.repository import (
-    Repository,  # Assuming you have a repository class
-)
+from models.databases.repository import Repository
 from pydantic import BaseModel
 
 
@@ -91,6 +89,24 @@ class Onboarding(Repository):
 
         if onboarding_data == []:
             return None
+
+        return OnboardingStates(**onboarding_data[0])
+
+    def create_user_onboarding(self, user_id: UUID) -> OnboardingStates:
+        """
+        Create user onboarding information by user_id
+        """
+        onboarding_data = (
+            self.db.from_("onboardings")
+            .insert(
+                [
+                    {
+                        "user_id": str(user_id),
+                    }
+                ]
+            )
+            .execute()
+        ).data
 
         return OnboardingStates(**onboarding_data[0])
 
